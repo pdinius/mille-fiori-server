@@ -27,7 +27,7 @@ const io = new Server<
   SocketData
 >({
   cors: {
-    origin: `http://localhost:5173`,
+    origin: `https://vite-production-a474.up.railway.app/`,
   },
 });
 
