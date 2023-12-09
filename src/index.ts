@@ -252,6 +252,10 @@ io.on("connection", (socket) => {
   });
 });
 
+server.get("/", (req, res) => {
+  res.send("Hello world.");
+});
+
 server.listen(port, "0.0.0.0", () => {
   console.log(`listening on port ${port}.`);
 });
