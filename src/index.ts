@@ -1,3 +1,7 @@
+const express = require("express");
+const app = express();
+const http = require("http");
+const server = http.createServer(app);
 import { Server } from "socket.io";
 import {
   ClientToServerEvents,
@@ -18,18 +22,14 @@ import {
   workshops,
 } from "./score-funcs";
 
-const COLORS: Array<PlayerColor> = ["orange", "red", "green", "purple"];
+const port = process.env.PORT || 3000;
 
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData
->({
-  cors: {
-    origin: `https://vite-production-a474.up.railway.app/`,
-  },
-});
+>(server);
 
 const locations = [
   "Workshops",
@@ -57,12 +57,15 @@ const extraSort = (a: CardData, b: CardData) => {
 
 const createGame = (): Gamestate => {
   const deck = createDeck();
-  const players = waitingColors.map(wc => wc.name);
+  const players = waitingColors.map((wc) => wc.name);
   const extras = deck.splice(0, players.length === 3 ? 4 : 9).sort(extraSort);
 
   const playerCount = players.length;
   const hands = Array.from({ length: playerCount }, () => deck.splice(0, 5));
-  const playerColors = waitingColors.reduce((a: Gamestate["playerColors"], b) => ({ ...a, [b.name]: b.color! }), {});
+  const playerColors = waitingColors.reduce(
+    (a: Gamestate["playerColors"], b) => ({ ...a, [b.name]: b.color! }),
+    {}
+  );
   const scores = players.reduce((a, b) => ({ ...a, [b]: 0 }), {});
   const ships = players.reduce((a, b) => ({ ...a, [b]: 0 }), {});
   const diamonds = players.reduce((a, b) => ({ ...a, [b]: 27 }), {});
@@ -202,12 +205,12 @@ io.on("connection", (socket) => {
             game.hands[0].length === 1 ||
             (game.playerCount === 2 && game.hands[0].length === 2)
           ) {
-            console.log('checking for game end or next round');
+            console.log("checking for game end or next round");
             if (game.deck.length === 0) {
               // GAME END
             } else {
               // NEXT ROUND
-              console.log('next round');
+              console.log("next round");
               game.extras.push(...game.hands.flat());
               ++game.firstPlayerIndex;
               game.firstPlayerIndex %= game.playerCount;
@@ -249,5 +252,6 @@ io.on("connection", (socket) => {
   });
 });
 
-io.listen(3000);
-console.log("listening on port 3000");
+server.listen(port, "0.0.0.0", () => {
+  console.log(`listening on port ${port}.`);
+});
