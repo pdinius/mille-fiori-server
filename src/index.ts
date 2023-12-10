@@ -1,14 +1,3 @@
-const express = require("express");
-const app = express();
-const http = require("http");
-const server = http.createServer(app);
-import { Server } from "socket.io";
-import {
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData,
-} from "./socket.types";
 import { CardData, createDeck } from "./deck";
 import { Gamestate, PlayerColor } from "./types";
 import { v4 } from "uuid";
@@ -22,14 +11,20 @@ import {
   workshops,
 } from "./score-funcs";
 
-const port = process.env.PORT || 3000;
+const express = require("express");
+const app = express();
+const http = require("http");
+const server = http.createServer(app);
+const socketio = require("socket.io");
 
-const io = new Server<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
->(server);
+const io = socketio(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+const port = process.env.PORT || 3000;
 
 const locations = [
   "Workshops",
@@ -103,14 +98,6 @@ const createGame = (): Gamestate => {
 
 const games: { [key: string]: Gamestate } = {};
 const waitingColors: Array<{ name: string; color: PlayerColor | null }> = [];
-
-const getNames = async () => {
-  const sockets = await io.fetchSockets();
-  return sockets
-    .filter((s) => s.data.displayName)
-    .map((s) => s.data.displayName)
-    .sort();
-};
 
 io.on("connection", (socket) => {
   console.log(`${socket.id} connecting.`);
@@ -250,6 +237,10 @@ io.on("connection", (socket) => {
       waitingColors.splice(index, 1);
     }
   });
+});
+
+server.get("/", (req, res) => {
+  res.send("hello world");
 });
 
 server.listen(port, "0.0.0.0", () => {
